@@ -45,8 +45,19 @@ mungeData <- function(solarCsv){
     
     #=========================================================
     # combine solar and lat/long data
-    data = join(solarData, postCodeData, type="left", by="postCode")
+    data <- join(solarData, postCodeData, type="left", by="postCode")
+    
+    # check data -> some postcodes might be missing state information
+    breaks <- c(0,200,800,1000,3000,4000,5000,6000,7000,8000,9000,10000)
+    labels <- c("NA","ACT","NT","NSW", "VIC", "QLD", "SA", "WA", "TAS", "VIC1", "QLD1")  # cut must have unique labels
+    tmpStates <- cut(data$postCode, breaks, labels, right=F)
+    tmpStates <- str_replace(tmpStates, "1","")   # get rid of QLD1 and VIC1
+    data$State[data$postCode > 0 & is.na(data$State)] <- tmpStates[data$postCode > 0 & is.na(data$State)]  # replace na postcodes other than 0
+    
+        
     fid = paste0("./cache/solarData_", format(Sys.time(), "%Y-%m-%d"), ".Rdata")  # remove dates if there's version control
     save(data, file = fid)
+    
+    return(data)
 
 }
